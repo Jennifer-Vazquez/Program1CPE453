@@ -13,7 +13,6 @@ schedfun SF = NULL;
 void* mainSP = NULL; 
 
 int new_lwp(lwpfun function,void * arg,size_t stackSize){
-  // printf("NEW LWP\n");
    if(lwp_procs == LWP_PROC_LIMIT){
        return -1;
    }
@@ -75,8 +74,6 @@ int new_lwp(lwpfun function,void * arg,size_t stackSize){
 
 
 void lwp_start(){
-   //printf("STARTING LWP\n");
-
     if(lwp_procs == 0){ //return immdidately if there is no processes
        return; 
     }
@@ -99,32 +96,29 @@ void lwp_start(){
 }
 
 void lwp_yield(){
-   // printf("YIELDING\n");
     SAVE_STATE();
     GetSP(lwp_ptable[lwp_running].sp);
 
     if(SF == NULL){
-        lwp_running = (lwp_running + 1)% lwp_procs; // idk if its right, rethink jen 
+        lwp_running = (lwp_running + 1)% lwp_procs; //this is round robin 
     }
     else{
         lwp_running = SF();
     }
-
     SetSP(lwp_ptable[lwp_running].sp);
     RESTORE_STATE();
 }
 
 
 void lwp_exit(){
-    //printf("EXITING\n");
         //terminates current process
         free(lwp_ptable[lwp_running].stack);
         //remove the current running process
         //move everything up
-        for(int i = lwp_running; i < lwp_procs; i++){
+        int i;
+        for(i = lwp_running; i < lwp_procs; i++){
             lwp_ptable[i] = lwp_ptable[i +1];
         } 
-
         lwp_procs--;
         if(lwp_procs == 0){
             lwp_stop(); //restore current stack pointer 
@@ -141,9 +135,7 @@ void lwp_exit(){
         }
     }
 
-
 void lwp_stop(){
-    //printf("Making new lwp\n");
     SAVE_STATE();
     SetSP(mainSP);
     RESTORE_STATE();
