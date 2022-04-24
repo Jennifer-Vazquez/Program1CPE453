@@ -7,7 +7,7 @@
 
 lwp_context lwp_ptable[LWP_PROC_LIMIT]; 
 int lwp_procs = 0;
-int lwp_running = 0; //do i want this as zero 
+int lwp_running = -1; 
 
 schedfun SF = NULL;
 void* mainSP = NULL; 
@@ -17,8 +17,6 @@ int new_lwp(lwpfun function,void * arg,size_t stackSize){
        return -1;
    }
 
-   
-    
     int allocateDataSize = sizeof(ptr_int_t) * stackSize; 
     ptr_int_t *sp = (ptr_int_t *) malloc(allocateDataSize); 
 
@@ -82,8 +80,8 @@ void lwp_start(){
     GetSP(mainSP);
 
     if(SF == NULL){
-        //lwp_running = (lwp_running + 1)% lwp_procs; // idk if its right, rethink jen 
-        lwp_running = 0;
+        lwp_running = (lwp_running + 1)% lwp_procs; // idk if its right, rethink jen 
+        //lwp_running = 0;
     }
     else{
         lwp_running = SF();
@@ -112,20 +110,24 @@ void lwp_yield(){
 
 void lwp_exit(){
         //terminates current process
-        free(lwp_ptable[lwp_running].stack);
+        //free(lwp_ptable[lwp_running].stack);
         //remove the current running process
         //move everything up
         int i;
-        for(i = lwp_running; i < lwp_procs; i++){
+        for(i = lwp_running; i < lwp_procs - 1; i++){
             lwp_ptable[i] = lwp_ptable[i +1];
         } 
+
         lwp_procs--;
+        lwp_running--;
+
         if(lwp_procs == 0){
             lwp_stop(); //restore current stack pointer 
         }
         else{ 
             if(SF == NULL){
-                lwp_running = 0;
+                //lwp_running = 0;
+                lwp_running = (lwp_running + 1)% lwp_procs; //this is round robin 
             }
             else{
                 lwp_running = SF();
